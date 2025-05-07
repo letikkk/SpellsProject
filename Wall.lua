@@ -7,7 +7,7 @@ local Wall = {}
 Wall.__index = Wall
 
 local Duration = SpellsInfo.Wall.Duration
-local Anim = ReplicatedStorage.Animations.Grab -- Assuming this animation is intended
+local Anim = ReplicatedStorage.Animations.Grab
 local Distance = 10 
 
 
@@ -19,7 +19,6 @@ local BRICK_DIM_X = 2
 local BRICK_DIM_Y = 2 
 local BRICK_DIM_Z = 1 
 
--- Modified placeBrick to accept playerHrpPosition
 local function placeBrick(cf, pos, color, playerHrpPosition)
 	local brick = Instance.new("Part")
 	brick.Size = Vector3.new(BRICK_DIM_X, BRICK_DIM_Y, BRICK_DIM_Z)
@@ -27,24 +26,23 @@ local function placeBrick(cf, pos, color, playerHrpPosition)
 	brick.Material = Enum.Material.Plastic
 	brick.Anchored = true
 
-	-- Calculate the world position where the center of the brick should be
-	local brickCenterInWallLocalSpace = pos + brick.Size / 2 -- brick.Size is (BRICK_DIM_X, BRICK_DIM_Y, BRICK_DIM_Z)
+
+	local brickCenterInWallLocalSpace = pos + brick.Size / 2 
 	local brickWorldCFrameOriginal = cf * CFrame.new(brickCenterInWallLocalSpace)
 	local brickWorldPosition = brickWorldCFrameOriginal.Position
 
-	-- Set the CFrame to be at brickWorldPosition and look at the playerHrpPosition
 	if playerHrpPosition then
 		brick.CFrame = CFrame.lookAt(brickWorldPosition, playerHrpPosition)
 	else
-		-- Fallback if playerHrpPosition is not provided, though it should be
+
 		brick.CFrame = brickWorldCFrameOriginal
 	end
 
 	brick.Parent = game.Workspace
-	return brick, pos + brick.Size -- Returns the brick and the top-right-far corner relative to cf's local space for next placement calculation
+	return brick, pos + brick.Size 
 end
 
--- Modified buildWall to accept and pass playerHrpPosition
+
 local function buildWall(cf, playerHrpPosition)
 	local color = BrickColor.random()
 	local bricks = {}
@@ -53,11 +51,10 @@ local function buildWall(cf, playerHrpPosition)
 
 	local currentY = 0
 	while currentY < WALL_HEIGHT_STUDS do
-		local p_for_y_update -- Stores the Vector3 (pos + brick.Size) from placeBrick, used to update currentY and currentX
+		local p_for_y_update
 		local currentX = -WALL_WIDTH_STUDS / 2
 		while currentX < WALL_WIDTH_STUDS / 2 do
 			local brick
-			-- Pass playerHrpPosition to placeBrick
 			brick, p_for_y_update = placeBrick(cf, Vector3.new(currentX, currentY - 2, 0), color, playerHrpPosition)
 
 			currentX = currentX + BRICK_DIM_X 
@@ -78,18 +75,10 @@ function Wall.new(plr: Player)
 	self.Humanoid = self.Char:WaitForChild("Humanoid")
 	local hrp = self.Char:WaitForChild("HumanoidRootPart")
 
-	if not (self.Humanoid and hrp) then
-		warn("Wall.new: Humanoid or HumanoidRootPart not found for player: " .. plr.Name)
-		return self 
-	end
-
 	local animator = self.Humanoid:FindFirstChildOfClass("Animator")
 	if animator then
 		self.AnimTrack = animator:LoadAnimation(Anim)
 		self.AnimTrack:Play()
-	else
-		warn("Wall.new: Animator not found on Humanoid for player: " .. plr.Name)
-		self.AnimTrack = nil 
 	end
 
 	self.LookPos = hrp.CFrame.LookVector * Distance 
@@ -102,7 +91,6 @@ function Wall.new(plr: Player)
 
 	local wallBuildOriginCF = CFrame.fromMatrix(wallFootPrintCenter, rightVec, upVec, forwardVec)
 
-	-- Pass hrp.Position to buildWall
 	local builtBricks = buildWall(wallBuildOriginCF, hrp.Position)
 
 	task.delay(0.2, function()
